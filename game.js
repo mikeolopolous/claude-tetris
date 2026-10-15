@@ -14,7 +14,12 @@ const COLORS = [
   '#64b5f6', // J - light blue
   '#ffb74d', // L - orange
   '#90a4ae', // N - tuerca (gris acero)
+  '#ff1744', // B - bomba total (rojo intenso)
 ];
+
+const BOMB = 9;
+const BOMB_RADIUS = 2; // área 5×5
+const BOMB_CHANCE = 0.5; // alta para pruebas; bajar a ~0.05 en producción
 
 const PIECES = [
   null,
@@ -26,6 +31,7 @@ const PIECES = [
   [[6,0,0],[6,6,6],[0,0,0]],                  // J
   [[0,0,7],[7,7,7],[0,0,0]],                  // L
   [[8,8,8],[8,0,8],[8,8,8]],                  // N (tuerca, hueco central)
+  [[9]],                                       // B (bomba total)
 ];
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
@@ -44,7 +50,7 @@ const restartBtn = document.getElementById('restart-btn');
 const themeToggle = document.getElementById('theme-toggle');
 const themeToggleLabel = document.getElementById('theme-toggle-label');
 
-let gridColor;
+let gridColor, bombBodyColor;
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 
@@ -53,7 +59,9 @@ function createBoard() {
 }
 
 function randomPiece() {
-  const type = Math.floor(Math.random() * (PIECES.length - 1)) + 1;
+  const type = Math.random() < BOMB_CHANCE
+    ? BOMB
+    : Math.floor(Math.random() * (BOMB - 1)) + 1;
   const shape = PIECES[type].map(row => [...row]);
   return { type, shape, x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2), y: 0 };
 }
@@ -99,6 +107,19 @@ function merge() {
         board[current.y + r][current.x + c] = current.shape[r][c];
 }
 
+function explode(cx, cy) {
+  let destroyed = 0;
+  for (let r = cy - BOMB_RADIUS; r <= cy + BOMB_RADIUS; r++) {
+    if (r < 0 || r >= ROWS) continue;
+    for (let c = cx - BOMB_RADIUS; c <= cx + BOMB_RADIUS; c++) {
+      if (c < 0 || c >= COLS) continue;
+      if (board[r][c]) destroyed++;
+      board[r][c] = 0;
+    }
+  }
+  score += destroyed * 10 * level;
+}
+
 function clearLines() {
   let cleared = 0;
   for (let r = ROWS - 1; r >= 0; r--) {
@@ -142,7 +163,8 @@ function softDrop() {
 }
 
 function lockPiece() {
-  merge();
+  if (current.type === BOMB) explode(current.x, current.y);
+  else merge();
   clearLines();
   spawn();
 }
@@ -166,11 +188,29 @@ function drawBlock(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
   const color = COLORS[colorIndex];
   context.globalAlpha = alpha ?? 1;
-  context.fillStyle = color;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
-  // highlight
-  context.fillStyle = 'rgba(255,255,255,0.12)';
-  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  if (colorIndex !== BOMB) {
+    context.fillStyle = color;
+    context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+    // highlight
+    context.fillStyle = 'rgba(255,255,255,0.12)';
+    context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  } else {
+    // la bomba se dibuja sin fondo
+    const cx = x * size + size / 2;
+    const cy = y * size + size / 2 + 2;
+    // cuerpo
+    context.fillStyle = bombBodyColor;
+    context.beginPath();
+    context.arc(cx, cy, size * 0.28, 0, Math.PI * 2);
+    context.fill();
+    // mecha
+    context.strokeStyle = '#ffd54f';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(cx + size * 0.15, cy - size * 0.22);
+    context.lineTo(cx + size * 0.28, cy - size * 0.36);
+    context.stroke();
+  }
   context.globalAlpha = 1;
 }
 
@@ -313,7 +353,7 @@ function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   themeToggle.setAttribute('aria-checked', isLight);
   themeToggleLabel.textContent = isLight ? 'Modo oscuro' : 'Modo claro';
-  gridColor = getComputedStyle(document.documentElement).getPropertyValue('--grid').trim();
+  readThemeColors();
   // En pausa o game over el loop no redibuja
   draw();
   drawNext();
@@ -324,5 +364,11 @@ themeToggle.addEventListener('click', () => {
   themeToggle.blur(); // evita que Espacio active el switch en vez de la caída
 });
 
-gridColor = getComputedStyle(document.documentElement).getPropertyValue('--grid').trim();
+function readThemeColors() {
+  const styles = getComputedStyle(document.documentElement);
+  gridColor = styles.getPropertyValue('--grid').trim();
+  bombBodyColor = styles.getPropertyValue('--bomb-body').trim();
+}
+
+readThemeColors();
 init();
