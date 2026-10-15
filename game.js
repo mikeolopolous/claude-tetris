@@ -39,6 +39,10 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
+const themeToggle = document.getElementById('theme-toggle');
+const themeToggleLabel = document.getElementById('theme-toggle-label');
+
+let gridColor;
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 
@@ -169,7 +173,7 @@ function drawBlock(context, x, y, colorIndex, size, alpha) {
 }
 
 function drawGrid() {
-  ctx.strokeStyle = '#22222e';
+  ctx.strokeStyle = gridColor;
   ctx.lineWidth = 0.5;
   for (let c = 1; c < COLS; c++) {
     ctx.beginPath();
@@ -301,4 +305,21 @@ document.addEventListener('keydown', e => {
 
 restartBtn.addEventListener('click', init);
 
+function applyTheme(theme) {
+  const isLight = theme === 'light';
+  document.documentElement.dataset.theme = theme;
+  themeToggle.setAttribute('aria-checked', isLight);
+  themeToggleLabel.textContent = isLight ? 'Modo oscuro' : 'Modo claro';
+  gridColor = getComputedStyle(document.documentElement).getPropertyValue('--grid').trim();
+  // En pausa o game over el loop no redibuja
+  draw();
+  drawNext();
+}
+
+themeToggle.addEventListener('click', () => {
+  applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+  themeToggle.blur(); // evita que Espacio active el switch en vez de la caída
+});
+
+gridColor = getComputedStyle(document.documentElement).getPropertyValue('--grid').trim();
 init();
