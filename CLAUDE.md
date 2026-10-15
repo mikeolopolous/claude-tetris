@@ -28,4 +28,4 @@ All logic lives in `game.js` (single script, `'use strict'`, no modules, all sta
 ## Gotchas
 
 - Changing `COLS`, `ROWS`, or `BLOCK` requires updating the `<canvas id="board">` `width`/`height` in `index.html` (`COLS*BLOCK` × `ROWS*BLOCK`). The next-piece preview assumes a 4×4 grid of 30px cells on a 120×120 canvas.
-- `loop()` does not check `gameOver`, and `endGame()` called from inside `loop` cancels the already-running frame, so `loop` re-schedules itself after game over. Resuming from pause also doesn't re-hide the overlay. Be aware of these when touching pause/game-over flow.
+- `endGame()` called from inside `loop` cancels the already-running frame (a no-op), so `loop` itself must check `gameOver` before re-scheduling. Resuming from pause also doesn't re-hide the overlay. Be aware of these when touching pause/game-over flow.
