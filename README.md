@@ -43,6 +43,7 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 - **Sistema de puntuación** clásico de Tetris (100 / 300 / 500 / 800 multiplicado por nivel).
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
 - **Pausa** y **Game Over** con opción de reinicio.
+- **Skins** (temas visuales de las piezas): Retro, Neón, Pastel y Pixel art, seleccionables desde la cabecera y guardadas en el navegador.
 
 ---
 
@@ -100,6 +101,7 @@ Define la estructura visual:
 - Un `<canvas id="board">` de **300 × 600** píxeles donde se renderiza el tablero.
 - Un panel lateral con `SCORE`, `LINES`, `LEVEL`, vista de la siguiente pieza y la lista de controles.
 - Un overlay para los estados **PAUSA** y **GAME OVER**.
+- Un selector `<select id="skin-select">` en la cabecera para elegir la skin de las piezas.
 
 ### 2. `style.css`
 
@@ -118,6 +120,13 @@ Contiene toda la lógica del juego. A grandes rasgos:
 - **Puntuación**: usa la tabla clásica `[0, 100, 300, 500, 800]` multiplicada por el nivel actual; el hard drop suma 2 puntos por celda recorrida y el soft drop 1 punto por fila.
 - **Nivel y velocidad**: el nivel sube cada 10 líneas; la velocidad de caída se calcula como `max(100, 1000 − (level − 1) × 90)` milisegundos.
 - **Ghost piece** (`ghostY`): proyecta la posición final de la pieza actual hacia abajo y la dibuja con `globalAlpha = 0.2`.
+- **Skins** (`SKINS`, `applySkin`): cada skin define su paleta (`colors`), un fondo de canvas opcional (`canvasBg`) y una función `drawCell` que `drawBlock` usa para pintar cada bloque:
+  - **Retro**: el estilo clásico, cuadro plano con brillo superior.
+  - **Neón**: fondo negro (también en modo claro) y resplandor con `shadowBlur` del color de la pieza.
+  - **Pastel**: paleta suave y bloques con esquinas redondeadas.
+  - **Pixel art**: bloque con bisel y textura de píxeles claros y oscuros.
+
+  El cambio se aplica al instante (incluso en pausa) y se guarda en `localStorage` con la clave `tetris.skin`.
 
 ### Flujo del juego
 
@@ -174,7 +183,7 @@ Algunos parámetros fáciles de tunear en `game.js`:
 | `COLS`         | Columnas del tablero                     | `10`                  |
 | `ROWS`         | Filas del tablero                        | `20`                  |
 | `BLOCK`        | Tamaño en píxeles de cada celda          | `30`                  |
-| `COLORS`       | Paleta de colores por tipo de pieza      | 8 colores             |
+| `SKINS`        | Skins: paleta, fondo y dibujo de bloques | `retro`               |
 | `LINE_SCORES`  | Puntos por 1, 2, 3 o 4 líneas eliminadas | `[0,100,300,500,800]` |
 | `BOMB_CHANCE`  | Probabilidad de que salga la bomba total | `0.5` (pruebas)       |
 | `dropInterval` | Velocidad inicial de caída en ms         | `1000`                |

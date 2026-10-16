@@ -4,7 +4,7 @@ const COLS = 10;
 const ROWS = 20;
 const BLOCK = 30;
 
-const COLORS = [
+const RETRO_COLORS = [
   null,
   '#4dd0e1', // I - cyan
   '#ffd54f', // O - yellow
@@ -16,6 +16,9 @@ const COLORS = [
   '#90a4ae', // N - tuerca (gris acero)
   '#ff1744', // B - bomba total (rojo intenso)
 ];
+
+// Paleta activa: la reasigna applySkin()
+let COLORS = RETRO_COLORS;
 
 const BOMB = 9;
 const BOMB_RADIUS = 2; // área 5×5
@@ -189,17 +192,18 @@ function drawBlock(context, x, y, colorIndex, size, alpha) {
   const color = COLORS[colorIndex];
   context.globalAlpha = alpha ?? 1;
   if (colorIndex !== BOMB) {
-    context.fillStyle = color;
-    context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
-    // highlight
-    context.fillStyle = 'rgba(255,255,255,0.12)';
-    context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+    activeSkin.drawCell(context, x * size, y * size, size, color);
   } else {
     // la bomba se dibuja sin fondo
     const cx = x * size + size / 2;
     const cy = y * size + size / 2 + 2;
+    context.save();
+    if (activeSkin.glow) {
+      context.shadowColor = color;
+      context.shadowBlur = 12;
+    }
     // cuerpo
-    context.fillStyle = bombBodyColor;
+    context.fillStyle = activeSkin.bombBody || bombBodyColor;
     context.beginPath();
     context.arc(cx, cy, size * 0.28, 0, Math.PI * 2);
     context.fill();
@@ -210,12 +214,13 @@ function drawBlock(context, x, y, colorIndex, size, alpha) {
     context.moveTo(cx + size * 0.15, cy - size * 0.22);
     context.lineTo(cx + size * 0.28, cy - size * 0.36);
     context.stroke();
+    context.restore();
   }
   context.globalAlpha = 1;
 }
 
 function drawGrid() {
-  ctx.strokeStyle = gridColor;
+  ctx.strokeStyle = activeSkin.gridColor || gridColor;
   ctx.lineWidth = 0.5;
   for (let c = 1; c < COLS; c++) {
     ctx.beginPath();
@@ -369,6 +374,135 @@ function readThemeColors() {
   gridColor = styles.getPropertyValue('--grid').trim();
   bombBodyColor = styles.getPropertyValue('--bomb-body').trim();
 }
+
+// ---- Skins (temas visuales de las piezas) ----
+const skinSelect = document.getElementById('skin-select');
+const SKIN_KEY = 'tetris.skin';
+
+// Clásico: cuadro plano + brillo superior
+function drawRetroCell(c, px, py, size, color) {
+  c.fillStyle = color;
+  c.fillRect(px + 1, py + 1, size - 2, size - 2);
+  c.fillStyle = 'rgba(255,255,255,0.12)';
+  c.fillRect(px + 1, py + 1, size - 2, 4);
+}
+
+// Neón: resplandor con el color de la pieza (save/restore para no contagiar el shadow)
+function drawNeonCell(c, px, py, size, color) {
+  c.save();
+  c.shadowColor = color;
+  c.shadowBlur = 12;
+  c.fillStyle = color;
+  c.fillRect(px + 3, py + 3, size - 6, size - 6);
+  c.restore();
+  c.strokeStyle = color;
+  c.lineWidth = 1.5;
+  c.strokeRect(px + 1.5, py + 1.5, size - 3, size - 3);
+  c.fillStyle = 'rgba(255,255,255,0.35)';
+  c.fillRect(px + 6, py + 6, size - 12, size - 12);
+}
+
+function roundedRectPath(c, x, y, w, h, r) {
+  c.beginPath();
+  if (typeof c.roundRect === 'function') {
+    c.roundRect(x, y, w, h, r);
+  } else {
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r);
+    c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r);
+    c.arcTo(x, y, x + w, y, r);
+    c.closePath();
+  }
+}
+
+// Pastel: bloques con esquinas redondeadas y brillo suave
+function drawPastelCell(c, px, py, size, color) {
+  const r = size * 0.25;
+  roundedRectPath(c, px + 2, py + 2, size - 4, size - 4, r);
+  c.fillStyle = color;
+  c.fill();
+  roundedRectPath(c, px + 5, py + 4, size - 10, size * 0.3, r * 0.6);
+  c.fillStyle = 'rgba(255,255,255,0.35)';
+  c.fill();
+}
+
+// Pixel art: bloque base + bisel + textura de píxeles claros/oscuros
+function drawPixelCell(c, px, py, size, color) {
+  const p = Math.max(2, Math.round(size / 10));
+  c.fillStyle = color;
+  c.fillRect(px, py, size, size);
+  // bisel
+  c.fillStyle = 'rgba(255,255,255,0.45)';
+  c.fillRect(px, py, size, p);
+  c.fillRect(px, py, p, size);
+  c.fillStyle = 'rgba(0,0,0,0.35)';
+  c.fillRect(px, py + size - p, size, p);
+  c.fillRect(px + size - p, py, p, size);
+  // textura
+  c.fillStyle = 'rgba(255,255,255,0.3)';
+  c.fillRect(px + p * 2, py + p * 2, p, p);
+  c.fillRect(px + p * 3, py + p * 2, p, p);
+  c.fillRect(px + p * 2, py + p * 3, p, p);
+  c.fillStyle = 'rgba(0,0,0,0.22)';
+  c.fillRect(px + p * 6, py + p * 6, p, p);
+  c.fillRect(px + p * 5, py + p * 7, p, p);
+  c.fillRect(px + p * 7, py + p * 4, p, p);
+}
+
+const SKINS = {
+  retro: { colors: RETRO_COLORS, drawCell: drawRetroCell },
+  neon: {
+    colors: [null, '#00f0ff', '#fff200', '#d400ff', '#39ff14', '#ff073a', '#2d6bff', '#ff9900', '#c0c0ff', '#ff1744'],
+    canvasBg: '#000000',
+    gridColor: '#101018',
+    bombBody: '#ffffff',
+    glow: true,
+    drawCell: drawNeonCell,
+  },
+  pastel: {
+    colors: [null, '#a8e6ef', '#fff1a8', '#d7b8f3', '#b9f0c4', '#f7b2bd', '#aecbfa', '#ffd3a8', '#c9d1d9', '#ff8a9a'],
+    drawCell: drawPastelCell,
+  },
+  pixel: {
+    colors: [null, '#29adff', '#ffec27', '#a05ae0', '#00e436', '#ff004d', '#1d5fd8', '#ffa300', '#83769c', '#ff004d'],
+    drawCell: drawPixelCell,
+  },
+};
+
+let activeSkin = SKINS.retro;
+
+function loadSkin() {
+  try {
+    const saved = localStorage.getItem(SKIN_KEY);
+    if (saved && Object.hasOwn(SKINS, saved)) return saved;
+  } catch (_) { /* localStorage no disponible */ }
+  return 'retro';
+}
+
+function applySkin(name) {
+  if (!Object.hasOwn(SKINS, name)) name = 'retro';
+  activeSkin = SKINS[name];
+  COLORS = activeSkin.colors;
+  skinSelect.value = name;
+  // Estilo inline: si la skin no define fondo, vuelve a --canvas-bg del tema
+  const bg = activeSkin.canvasBg || '';
+  canvas.style.background = bg;
+  nextCanvas.style.background = bg;
+  try { localStorage.setItem(SKIN_KEY, name); } catch (_) { /* ignorar */ }
+  // En pausa o game over el loop no redibuja
+  if (current) {
+    draw();
+    drawNext();
+  }
+}
+
+skinSelect.addEventListener('change', () => {
+  applySkin(skinSelect.value);
+  skinSelect.blur(); // devuelve las flechas y Espacio al juego
+});
+
+applySkin(loadSkin());
 
 readThemeColors();
 init();
