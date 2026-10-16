@@ -35,6 +35,10 @@
           <span class="label">LEVEL</span>
           <span class="value" id="level">1</span>
         </div>
+        <div class="panel-section">
+          <span class="label">COMBO</span>
+          <span class="value" id="combo">0</span>
+        </div>
 
         <div class="panel-section">
           <span class="label">NEXT</span>
@@ -54,11 +58,34 @@
       </aside>
     </div>
 
-    <div id="overlay" class="overlay hidden">
+    <div id="overlay" class="overlay">
       <div class="overlay-box">
-        <p id="overlay-title">GAME OVER</p>
+        <p id="overlay-title">TETRIS</p>
         <p id="overlay-score"></p>
-        <button id="restart-btn" class="menu-btn">Reiniciar</button>
+        <p id="record-msg" class="record-msg hidden"></p>
+
+        <form id="name-form" class="name-form hidden">
+          <label for="player-name">Tu nombre</label>
+          <input id="player-name" type="text" maxlength="12" autocomplete="off" spellcheck="false" />
+          <button type="submit">Guardar</button>
+        </form>
+
+        <section id="records" class="records hidden">
+          <span class="label">MEJORES PUNTUACIONES</span>
+          <table class="records-table">
+            <thead>
+              <tr><th>#</th><th>Nombre</th><th>Puntos</th><th>Líneas</th><th>Combo</th></tr>
+            </thead>
+            <tbody id="records-body"></tbody>
+          </table>
+          <div class="records-extra">
+            <span>Mejor combo: <b id="best-combo">0</b></span>
+            <span>Líneas máx.: <b id="max-lines">0</b></span>
+          </div>
+          <button id="reset-records" class="link-btn" type="button">Borrar récords</button>
+        </section>
+
+        <button id="restart-btn" class="menu-btn">Jugar</button>
       </div>
     </div>
 
