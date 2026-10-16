@@ -22,10 +22,11 @@ All logic lives in `game.js` (single script, `'use strict'`, no modules, all sta
 - **Pieces**: square matrices; rotation is `rotateCW` (transpose + reverse) with simple wall kicks in `tryRotate` (offsets `0, -1, 1, -2, 2`), not SRS.
 - **Piece lifecycle**: `collide` guards every move → `lockPiece` = `merge` → `clearLines` (updates score/level/`dropInterval`) → `spawn` (promotes `next`, game over if the new piece collides).
 - **Loop**: `requestAnimationFrame`-based `loop(ts)` accumulates `dropAccum` and drops one row per `dropInterval` ms, then redraws everything with `draw()` each frame. Pause/game over stop it via `cancelAnimationFrame(animId)`; `init()` fully resets state and is also the restart handler.
-- **Scoring**: `LINE_SCORES[cleared] * level`; hard drop +2/cell, soft drop +1/row. Level = `floor(lines/10)+1`; `dropInterval = max(100, 1000 - (level-1)*90)`.
-- **HTML coupling**: `game.js` looks up DOM ids `board`, `next-canvas`, `score`, `lines`, `level`, `overlay`, `overlay-title`, `overlay-score`, `restart-btn`. The overlay is shared by PAUSA and GAME OVER, toggled via the `hidden` class.
+- **Scoring**: `LINE_SCORES[cleared] * level`; hard drop +2/cell, soft drop +1/row. Level = `baseLevel + floor(lines/10)`; `dropInterval = computeDropInterval(level)` = `max(100, 1000 - (level-1)*90)`.
+- **Pause menu**: `P`/`Escape` → `togglePause()`, which shows `#pause-menu` inside the overlay (Reanudar, Reiniciar → `restartGame()`, Ver controles, Nivel inicial select). The start level is `startLevel` (persisted in `localStorage` `tetris.startLevel`, try/catch) and is copied into `baseLevel` by `init()`, so changes apply to the next game only. While paused, game keys are ignored and recorded in `staleKeys` (cleared on `keyup`); resuming/restarting calls `afterMenuClose()` (blurs the focused button + 150 ms input ignore window). `showPauseMenu(bool)` swaps the pause menu and the game-over `#restart-btn`.
+- **HTML coupling**: `game.js` looks up DOM ids `board`, `next-canvas`, `score`, `lines`, `level`, `overlay`, `overlay-title`, `overlay-score`, `restart-btn`, `pause-menu`, `resume-btn`, `pause-restart-btn`, `controls-toggle`, `controls-panel`, `start-level`. The overlay is shared by PAUSA and GAME OVER, toggled via the `hidden` class.
 
 ## Gotchas
 
 - Changing `COLS`, `ROWS`, or `BLOCK` requires updating the `<canvas id="board">` `width`/`height` in `index.html` (`COLS*BLOCK` × `ROWS*BLOCK`). The next-piece preview assumes a 4×4 grid of 30px cells on a 120×120 canvas.
-- `endGame()` called from inside `loop` cancels the already-running frame (a no-op), so `loop` itself must check `gameOver` before re-scheduling. Resuming from pause also doesn't re-hide the overlay. Be aware of these when touching pause/game-over flow.
+- `endGame()` called from inside `loop` cancels the already-running frame (a no-op), so `loop` itself must check `gameOver` before re-scheduling. Be aware of this when touching pause/game-over flow.
