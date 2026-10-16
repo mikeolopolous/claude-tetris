@@ -38,6 +38,14 @@
   --bomb-body: #111111;
 }
 
+/* Neon: tablero negro en ambos modos para que luzca el glow */
+[data-skin="neon"] {
+  --canvas-bg: #000000;
+  --grid: #101018;
+  --bomb-body: #ffffff;
+  --board-shadow: rgba(0, 240, 255, 0.25);
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -107,6 +115,26 @@ body {
 
 .theme-toggle[aria-checked="true"] .thumb {
   transform: translateX(16px);
+}
+
+/* ---- Selector de skin ---- */
+.skin-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.skin-picker select {
+  background: var(--kbd-bg);
+  color: var(--text);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
 }
 
 .wrapper {
