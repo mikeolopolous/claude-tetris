@@ -43,6 +43,17 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 - **Sistema de puntuación** clásico de Tetris (100 / 300 / 500 / 800 multiplicado por nivel).
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
 - **Pausa** y **Game Over** con opción de reinicio.
+- **Pantalla de inicio** con la tabla de récords: el juego no arranca hasta pulsar **Jugar**.
+- **Tabla de récords local** (top 5) guardada en `localStorage`, con **mejor combo** y **líneas máximas** en una partida.
+
+### Tabla de récords
+
+- Los récords se guardan en el navegador bajo la clave `tetris.records` con el formato `{ top: [{ name, score, lines, level, date }], bestCombo, maxLines }`.
+- Al terminar la partida, si la puntuación entra en el top 5 (y es mayor que 0) se pide un nombre (máx. 12 caracteres, por defecto «Jugador»); se guarda con **Guardar** o con `Enter`, y la fila nueva aparece resaltada junto al mensaje «¡Nuevo récord!».
+- **Combo**: número de piezas consecutivas que limpian al menos una línea (se reinicia cuando una pieza no limpia ninguna). Se guarda el mejor combo histórico; no afecta a la puntuación.
+- **Líneas máximas**: el mayor número de líneas logrado en una sola partida.
+- El botón **Resetear récords** (en la pantalla de inicio y en Game Over) borra todo tras pedir confirmación.
+- Si `localStorage` no está disponible o los datos están corruptos, el juego funciona igual con una tabla vacía.
 
 ---
 
@@ -99,7 +110,7 @@ Define la estructura visual:
 
 - Un `<canvas id="board">` de **300 × 600** píxeles donde se renderiza el tablero.
 - Un panel lateral con `SCORE`, `LINES`, `LEVEL`, vista de la siguiente pieza y la lista de controles.
-- Un overlay para los estados **PAUSA** y **GAME OVER**.
+- Un overlay para la **pantalla de inicio** y los estados **PAUSA** y **GAME OVER**, que incluye la tabla de récords y el formulario para guardar el nombre.
 
 ### 2. `style.css`
 
@@ -122,6 +133,8 @@ Contiene toda la lógica del juego. A grandes rasgos:
 ### Flujo del juego
 
 ```
+carga de la página → showStartScreen()  (tabla de récords + botón Jugar)
+        ↓  clic en Jugar
 init()
   ├─ createBoard()                  → matriz vacía
   ├─ next = randomPiece()
@@ -137,7 +150,7 @@ init()
    keydown → mover / rotar / soft-drop / hard-drop / pausa
 ```
 
-Cuando una pieza recién generada ya colisiona al aparecer (`spawn`), se dispara `endGame()` y se muestra el overlay de **Game Over**.
+Cuando una pieza recién generada ya colisiona al aparecer (`spawn`), se dispara `endGame()` y se muestra el overlay de **Game Over** con la tabla de récords (y el campo de nombre si la puntuación entra en el top 5).
 
 ---
 
