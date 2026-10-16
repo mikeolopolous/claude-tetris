@@ -109,6 +109,31 @@ body {
   transform: translateX(16px);
 }
 
+/* ---- Selector de skin ---- */
+.skin-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+#skin-select {
+  background: var(--kbd-bg);
+  color: var(--text);
+  border: 1px solid var(--kbd-border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+#skin-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .wrapper {
   position: relative;
 }

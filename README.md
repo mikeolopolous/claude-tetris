@@ -44,6 +44,7 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
 - **Menú de pausa** (`P` o `Esc`) con opciones para reanudar, reiniciar, ver los controles y elegir el **nivel inicial** (1–10) de la siguiente partida, que se guarda en `localStorage`.
 - **Game Over** con opción de reinicio.
+- **Skins** (temas visuales de las piezas): Retro, Neón, Pastel y Pixel art, seleccionables desde la cabecera y guardadas en el navegador.
 
 ---
 
@@ -101,6 +102,7 @@ Define la estructura visual:
 - Un `<canvas id="board">` de **300 × 600** píxeles donde se renderiza el tablero.
 - Un panel lateral con `SCORE`, `LINES`, `LEVEL`, vista de la siguiente pieza y la lista de controles.
 - Un overlay compartido por **PAUSA** y **GAME OVER**; en pausa muestra el menú `#pause-menu` (Reanudar, Reiniciar, Ver controles y Nivel inicial).
+- Un selector `<select id="skin-select">` en la cabecera para elegir la skin de las piezas.
 
 ### 2. `style.css`
 
@@ -120,6 +122,13 @@ Contiene toda la lógica del juego. A grandes rasgos:
 - **Nivel y velocidad**: la partida empieza en el nivel inicial elegido en el menú de pausa (`tetris.startLevel` en `localStorage`, 1 por defecto) y sube cada 10 líneas: `nivel = nivelInicial + floor(líneas / 10)`. La velocidad de caída la calcula `computeDropInterval(level)` = `max(100, 1000 − (level − 1) × 90)` milisegundos.
 - **Menú de pausa**: mientras está abierto se bloquean las teclas del juego (solo funcionan `Tab`/`Enter`/`Espacio` para navegar el menú). Al reanudar se oculta el overlay, se quita el foco del botón y se ignoran las teclas que siguieran pulsadas.
 - **Ghost piece** (`ghostY`): proyecta la posición final de la pieza actual hacia abajo y la dibuja con `globalAlpha = 0.2`.
+- **Skins** (`SKINS`, `applySkin`): cada skin define su paleta (`colors`), un fondo de canvas opcional (`canvasBg`) y una función `drawCell` que `drawBlock` usa para pintar cada bloque:
+  - **Retro**: el estilo clásico, cuadro plano con brillo superior.
+  - **Neón**: fondo negro (también en modo claro) y resplandor con `shadowBlur` del color de la pieza.
+  - **Pastel**: paleta suave y bloques con esquinas redondeadas.
+  - **Pixel art**: bloque con bisel y textura de píxeles claros y oscuros.
+
+  El cambio se aplica al instante (incluso en pausa) y se guarda en `localStorage` con la clave `tetris.skin`.
 
 ### Flujo del juego
 
@@ -176,7 +185,7 @@ Algunos parámetros fáciles de tunear en `game.js`:
 | `COLS`         | Columnas del tablero                     | `10`                  |
 | `ROWS`         | Filas del tablero                        | `20`                  |
 | `BLOCK`        | Tamaño en píxeles de cada celda          | `30`                  |
-| `COLORS`       | Paleta de colores por tipo de pieza      | 8 colores             |
+| `SKINS`        | Skins: paleta, fondo y dibujo de bloques | `retro`               |
 | `LINE_SCORES`  | Puntos por 1, 2, 3 o 4 líneas eliminadas | `[0,100,300,500,800]` |
 | `BOMB_CHANCE`  | Probabilidad de que salga la bomba total | `0.5` (pruebas)       |
 | `dropInterval` | Velocidad inicial de caída en ms         | `1000`                |
